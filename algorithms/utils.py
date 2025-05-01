@@ -15,7 +15,7 @@ def setup(base_url='https://api.hyperliquid.xyz', skip_ws=False):
         account: LocalAccount = eth_account.Account.from_key(config["secret_key"])
         address =config["account_address"]
         if address == "":
-            adress = account.address
+            address = account.address
         # print("Running with account address:", address)
         if address != account.address:
             # print("Running with agent address:", account.address)
@@ -147,3 +147,34 @@ def get_symbol_index(symbol):
 
     else:
         print("error")
+
+def get_user_orders():
+    """
+    Gets user state from the info endpoint which has more data than the other
+    returns side and oid
+    """
+    url = "https://api.hyperliquid.xyz/info"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "type": "frontendOpenOrders",
+        "user": "0xeBB340294d8cb7289B54d80bCC3fADf92F4c7272"
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+
+    if response.status_code == 200:
+        user_orders = response.json()
+        if isinstance(user_orders, list):
+            if len(user_orders) > 0:
+                print("Orders:")
+                for order in user_orders:
+                    side = order.get("side")
+                    oid = order.get("orderId")
+                    print(json.dumps(order, indent=2))
+            else:
+                print("No open orders found.")
+        else:
+            print("Unexpected response format. Expected a list.")
+    else:
+        print(f"Error: {response.status_code}, {response.text}")
+    return side, oid
