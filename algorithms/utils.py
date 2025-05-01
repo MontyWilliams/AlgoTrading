@@ -6,6 +6,7 @@ from eth_account.signers.local import LocalAccount
 from hyperliquid.exchange import Exchange
 from hyperliquid.info import Info
 import subprocess
+from pprint import pprint
 
 def setup(base_url='https://api.hyperliquid.xyz', skip_ws=False):
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -30,7 +31,7 @@ def setup(base_url='https://api.hyperliquid.xyz', skip_ws=False):
             raise Exception(error_string)
         exchange = Exchange(account, base_url, account_address=address)
         return address, info, exchange, account
-    
+
 def setup_multi_sig_wallets():
 
 
@@ -119,3 +120,30 @@ def play_sound(file_path):
         )
     except FileNotFoundError:
         print("Error: 'ffplay' is not installed or not found in PATH.")
+
+def get_symbol_index(symbol):
+    """
+    Gets data from Univers and returns index of symbol
+    """
+    url = "https://api.hyperliquid.xyz/info"
+    headers = {"Content-Type": "application/json"}
+    data = { "type": "meta" }
+
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        # with open("meta_output.json", "w") as f:
+        #     json.dump(response.json(), f, indent=4)
+        data = response.json()
+        universe = data["universe"]
+        symbol_index = None
+        for index, asset in enumerate(universe):
+            if asset.get("name") == symbol:
+                symbol_index = index
+                break
+        if symbol_index:
+            print(f"Symbol '{symbol}' found at index {symbol_index}.")
+        else:
+            print(f"Symbol '{symbol}' not found in the universe.")
+
+    else:
+        print("error")
