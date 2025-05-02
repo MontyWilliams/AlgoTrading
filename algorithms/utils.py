@@ -150,13 +150,14 @@ def get_symbol_index(symbol):
 
 def get_user_orders():
     """
-    Gets user state from the info endpoint which has more data than the other
-    returns side and oid
+    Gets all open orders and returns side and size
+    Note: we dont need to get all open positions because all open positions
+    will have a limit close order
     """
     url = "https://api.hyperliquid.xyz/info"
     headers = {"Content-Type": "application/json"}
     payload = {
-        "type": "frontendOpenOrders",
+        "type": "openOrders",
         "user": "0xeBB340294d8cb7289B54d80bCC3fADf92F4c7272"
     }
 
@@ -164,17 +165,18 @@ def get_user_orders():
 
     if response.status_code == 200:
         user_orders = response.json()
+        orders_arry = []
+
         if isinstance(user_orders, list):
             if len(user_orders) > 0:
                 print("Orders:")
                 for order in user_orders:
-                    side = order.get("side")
-                    oid = order.get("orderId")
-                    print(json.dumps(order, indent=2))
+                    orders_arry.append(order)
+                    print(json.dumps(order, inden=2))
             else:
                 print("No open orders found.")
         else:
             print("Unexpected response format. Expected a list.")
     else:
         print(f"Error: {response.status_code}, {response.text}")
-    return side, oid
+    return orders_arry
