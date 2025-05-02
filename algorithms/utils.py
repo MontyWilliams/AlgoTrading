@@ -148,6 +148,8 @@ def get_symbol_index(symbol):
     else:
         print("error")
 
+    return symbol_index
+
 def get_user_orders():
     """
     Gets all open orders and returns side and size
@@ -171,8 +173,23 @@ def get_user_orders():
             if len(user_orders) > 0:
                 print("Orders:")
                 for order in user_orders:
-                    orders_arry.append(order)
-                    print(json.dumps(order, inden=2))
+                    symbol = order.get("coin")
+                    index_pos = get_symbol_index(symbol)
+                    openpos_side = order.get("side")
+                    openpos_size = order.get("sz")
+                    openpos_bool = ""
+                    if openpos_side == ("B"):
+                        openpos_bool == True
+                        long = False
+                    elif openpos_side == ("A"):
+                        openpos_bool == True
+                        long = True
+                    else:
+                        openpos_bool == False
+                        long = None
+                    
+                    print(f'open_positions... | openpos_bool {openpos_bool} | openpos_size {openpos_size} | long {long} | index_pos {index_pos}')
+
             else:
                 print("No open orders found.")
         else:
