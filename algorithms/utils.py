@@ -167,7 +167,7 @@ def get_user_orders():
         if openpos_size > 0:
             long = True
             openpos_bool = True
-        elif openpos_size > 0:
+        elif openpos_size < 0:
             long = False
             openpos_bool = True
         else:
