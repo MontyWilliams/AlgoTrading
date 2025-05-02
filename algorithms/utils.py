@@ -7,6 +7,7 @@ from hyperliquid.exchange import Exchange
 from hyperliquid.info import Info
 import subprocess
 from pprint import pprint
+from decimal import Decimal
 
 def setup(base_url='https://api.hyperliquid.xyz', skip_ws=False):
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -156,44 +157,22 @@ def get_user_orders():
     Note: we dont need to get all open positions because all open positions
     will have a limit close order
     """
-    url = "https://api.hyperliquid.xyz/info"
-    headers = {"Content-Type": "application/json"}
-    payload = {
-        "type": "openOrders",
-        "user": "0xeBB340294d8cb7289B54d80bCC3fADf92F4c7272"
-    }
-
-    response = requests.post(url, headers=headers, json=payload)
-
-    if response.status_code == 200:
-        user_orders = response.json()
-        orders_arry = []
-
-        if isinstance(user_orders, list):
-            if len(user_orders) > 0:
-                print("Orders:")
-                for order in user_orders:
-                    symbol = order.get("coin")
-                    index_pos = get_symbol_index(symbol)
-                    openpos_side = order.get("side")
-                    openpos_size = order.get("sz")
-                    openpos_bool = ""
-                    if openpos_side == ("B"):
-                        openpos_bool == True
-                        long = False
-                    elif openpos_side == ("A"):
-                        openpos_bool == True
-                        long = True
-                    else:
-                        openpos_bool == False
-                        long = None
-                    
-                    print(f'open_positions... | openpos_bool {openpos_bool} | openpos_size {openpos_size} | long {long} | index_pos {index_pos}')
-
-            else:
-                print("No open orders found.")
+    address, info, exchange, account = setup()
+    user_state = info.user_state(address)
+    open_positions = user_state["assetPositions"]
+    
+    for position in open_positions:
+        openpos_size = float(position["position"]["szi"])
+        index_pos = get_symbol_index(position["position"]["coin"])
+        if openpos_size > 0:
+            long = True
+            openpos_bool = True
+        elif openpos_size > 0:
+            long = False
+            openpos_bool = True
         else:
-            print("Unexpected response format. Expected a list.")
-    else:
-        print(f"Error: {response.status_code}, {response.text}")
-    return orders_arry
+            openpos_bool = False
+            long = None
+    print(f"open_positions... | openpos_bool {openpos_bool} | openpos_size {openpos_size} | long {long} | index_pos {index_pos}")
+    
+    return open_positions, openpos_bool, openpos_size, long, index_pos
