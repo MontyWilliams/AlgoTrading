@@ -160,6 +160,7 @@ def get_user_orders():
     address, info, exchange, account = setup()
     user_state = info.user_state(address)
     open_positions = user_state["assetPositions"]
+    openpos_bool = False
     
     for position in open_positions:
         openpos_size = float(position["position"]["szi"])
