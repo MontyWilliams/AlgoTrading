@@ -1,13 +1,16 @@
 import json
 import os
+import time
 import requests
 import eth_account
 from eth_account.signers.local import LocalAccount
+from eth_account import Account
 from hyperliquid.exchange import Exchange
 from hyperliquid.info import Info
 import subprocess
 from pprint import pprint
 from decimal import Decimal
+from eth_account.messages import encode_defunct
 
 def setup(base_url='https://api.hyperliquid.xyz', skip_ws=False):
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -160,6 +163,11 @@ def get_user_orders():
     address, info, exchange, account = setup()
     user_state = info.user_state(address)
     open_positions = user_state["assetPositions"]
+    
+    if not open_positions:
+        print("No open positions")
+        return open_positions, False, 0, None, None
+    
     openpos_bool = False
     
     for position in open_positions:
@@ -171,9 +179,22 @@ def get_user_orders():
         elif openpos_size < 0:
             long = False
             openpos_bool = True
+            print(f"open_positions... | openpos_bool {openpos_bool} | openpos_size {openpos_size} | long {long} | index_pos {index_pos}")
+
         else:
             openpos_bool = False
             long = None
-    print(f"open_positions... | openpos_bool {openpos_bool} | openpos_size {openpos_size} | long {long} | index_pos {index_pos}")
+            openpos_size = 0 
+
+        return open_positions, openpos_bool, openpos_size, long, index_pos
+
+def cancel_open_orders():
+    """
+    Finds open orders and cancels them if they exist.
+    """
+    address, info, exchange, account = setup()
     
-    return open_positions, openpos_bool, openpos_size, long, index_pos
+    open_orders = info.open_orders(address)
+    for open_order in open_orders:
+        print(f"cancelling order {open_order}")
+        exchange.cancel(open_order["coin"], open_order["oid"])
