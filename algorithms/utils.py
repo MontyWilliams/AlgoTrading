@@ -195,6 +195,16 @@ def cancel_open_orders():
     address, info, exchange, account = setup()
     
     open_orders = info.open_orders(address)
+    if not open_orders:
+        print("No open orders to cancel.")
+        return
     for open_order in open_orders:
-        print(f"cancelling order {open_order}")
+        print("Found open order. Cancelling...")
         exchange.cancel(open_order["coin"], open_order["oid"])
+        updated_open_orders = info.open_orders(address)
+        if any(order["oid"] == open_order["oid"] for order in updated_open_orders):
+            print(f"Cancellation failed. Order {open_order['oid']} still exists.")
+        else:
+            print(f"Successfully cancelled order {open_order['oid']} for coin {open_order['coin']}.")
+
+            
