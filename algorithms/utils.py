@@ -154,13 +154,12 @@ def get_symbol_index(symbol):
 
     return symbol_index
 
-def get_user_orders():
+def get_user_orders(address, info):
     """
     Gets all open orders and returns side and size
     Note: we dont need to get all open positions because all open positions
     will have a limit close order
     """
-    address, info, exchange, account = setup()
     user_state = info.user_state(address)
     open_positions = user_state["assetPositions"]
     
@@ -168,43 +167,62 @@ def get_user_orders():
         print("No open positions")
         return open_positions, False, 0, None, None
     
-    openpos_bool = False
-    
+    result = []
     for position in open_positions:
-        openpos_size = float(position["position"]["szi"])
-        index_pos = get_symbol_index(position["position"]["coin"])
-        if openpos_size > 0:
-            long = True
-            openpos_bool = True
-        elif openpos_size < 0:
-            long = False
-            openpos_bool = True
-            print(f"open_positions... | openpos_bool {openpos_bool} | openpos_size {openpos_size} | long {long} | index_pos {index_pos}")
+        szi = float(position["position"]["szi"])
+        if szi == 0:
+            continue
+        symbol = position["position"]["coin"]
+        index_pos = get_symbol_index(symbol)
+        long = szi > 0
+        result.append({
+            "symbol": symbol,
+            "size": abs(szi),
+            "long": long,
+            "index_pos": index_pos
+        })
+    if not result:
+        return [], False
+    return result, True
 
-        else:
-            openpos_bool = False
-            long = None
-            openpos_size = 0 
 
-        return open_positions, openpos_bool, openpos_size, long, index_pos
-
-def cancel_open_orders():
+def cancel_open_orders(address, info, exchange):
     """
     Finds open orders and cancels them if they exist.
     """
-    address, info, exchange, account = setup()
     
     open_orders = info.open_orders(address)
     if not open_orders:
         print("No open orders to cancel.")
         return
-    for open_order in open_orders:
-        print("Found open order. Cancelling...")
-        exchange.cancel(open_order["coin"], open_order["oid"])
-        updated_open_orders = info.open_orders(address)
-        if any(order["oid"] == open_order["oid"] for order in updated_open_orders):
-            print(f"Cancellation failed. Order {open_order['oid']} still exists.")
-        else:
-            print(f"Successfully cancelled order {open_order['oid']} for coin {open_order['coin']}.")
+    else:
+        for open_order in open_orders:
+            print("Found open order. Cancelling...")
+            exchange.cancel(open_order["coin"], open_order["oid"])
+            updated_open_orders = info.open_orders(address)
+            if any(order["oid"] == open_order["oid"] for order in updated_open_orders):
+                print(f"Cancellation failed. Order {open_order['oid']} still exists.")
+            else:
+                print(f"Successfully cancelled order {open_order['oid']} for coin {open_order['coin']}.")
 
-            
+def ask_bid(symbol):
+    """
+    Get ask and bid for a given sym
+    """
+    url = "https://api.hyperliquid.xyz/info"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "type": "l2Book",
+        "coin": symbol
+    }
+
+    response = requests.post(url, headers=headers, data=json.dumps(data))
+    if response.status_code != 200:
+        raise Exception(f"Request failed: {response.text}")
+    
+    book = response.json()["levels"]
+    bid = float(book[0][0]["px"])  # top of bid book
+    ask = float(book[1][0]["px"])  # top of ask book
+
+    return bid, ask
+
