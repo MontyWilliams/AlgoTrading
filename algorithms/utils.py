@@ -156,13 +156,11 @@ def get_symbol_index(symbol):
 
 def get_user_orders(address, info):
     """
-    Gets all open orders and returns side and size
-    Note: we dont need to get all open positions because all open positions
-    will have a limit close order
+    Gets all open orders and returns them as a dict along with a bool
     """
     user_state = info.user_state(address)
     open_positions = user_state["assetPositions"]
-    
+    pprint(user_state)
     if not open_positions:
         print("No open positions")
         return open_positions, False, 0, None, None
@@ -175,16 +173,19 @@ def get_user_orders(address, info):
         symbol = position["position"]["coin"]
         index_pos = get_symbol_index(symbol)
         long = szi > 0
+        entry_price = position["position"]["entryPx"]
+        leverage = position["position"]["leverage"]["value"]
         result.append({
             "symbol": symbol,
             "size": abs(szi),
             "long": long,
-            "index_pos": index_pos
+            "index_pos": index_pos,
+            "entry_price": entry_price,
+            "leverage": leverage
         })
     if not result:
         return [], False
     return result, True
-
 
 def cancel_open_orders(address, info, exchange):
     """
