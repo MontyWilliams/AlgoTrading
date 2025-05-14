@@ -4,7 +4,7 @@ from datetime import datetime
 from websockets import connect
 from termcolor import cprint
 
-symbols = ['btcusdt', 'ethusdt', 'solusdt', 'taousdt', 'suiusdt', 'arusdt']
+symbols = ['btcusdt', 'ethusdt', 'solusdt', 'taousdt', 'suiusdt', 'arusdt', 'pepeusdt']
 websocket_url_base = 'wss://fstream.binance.com/ws/'
 
 shared_symbol_counter = {'count': 0}

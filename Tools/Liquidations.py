@@ -6,7 +6,7 @@ import pytz
 from toolUtils import play_sound
 from websockets import connect 
 from termcolor import cprint
-from playutils import play_sound
+
 
 
 websocket_url = 'wss://fstream.binance.com/ws/!forceOrder@arr'

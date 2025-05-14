@@ -5,7 +5,7 @@ from websockets import connect
 from termcolor import cprint
 import random
 
-symbols = ['btcusdt', 'taousdt', 'suiusdt', 'arusdt']
+symbols = ['btcusdt', 'taousdt', 'suiusdt', 'arusdt', 'pepeusdt']
 websocket_url_base = 'wss://fstream.binance.com/ws/'
 
 shared_symbol_counter = {'count': 0}

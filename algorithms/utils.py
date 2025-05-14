@@ -160,10 +160,7 @@ def get_user_orders(address, info):
     """
     user_state = info.user_state(address)
     open_positions = user_state["assetPositions"]
-    pprint(user_state)
-    if not open_positions:
-        print("No open positions")
-        return open_positions, False, 0, None, None
+    # pprint(user_state)
     
     result = []
     for position in open_positions:
@@ -175,17 +172,21 @@ def get_user_orders(address, info):
         long = szi > 0
         entry_price = position["position"]["entryPx"]
         leverage = position["position"]["leverage"]["value"]
+        pnl = position["position"]["unrealizedPnl"]
         result.append({
             "symbol": symbol,
             "size": abs(szi),
             "long": long,
             "index_pos": index_pos,
             "entry_price": entry_price,
-            "leverage": leverage
+            "leverage": leverage,
+            "pnl": pnl
         })
-    if not result:
-        return [], False
-    return result, True
+    if position:
+        return result, True
+    else:
+        print("No open positions found.")
+        return result, False
 
 def cancel_open_orders(address, info, exchange):
     """
@@ -206,24 +207,50 @@ def cancel_open_orders(address, info, exchange):
             else:
                 print(f"Successfully cancelled order {open_order['oid']} for coin {open_order['coin']}.")
 
-def ask_bid(symbol):
+def get_candles(symbol, timeframe, limit):
+    """"
+    - Get candles for a given symbol, timeframe/limit
+    - Returns a dict of candles
     """
-    Get ask and bid for a given sym
-    """
-    url = "https://api.hyperliquid.xyz/info"
+    timeframe = int(timeframe)  # Convert to int incase it is a string
+    end_time = int(time.time() * 1000)  # Current time in milliseconds
+    interval_miliseconds = timeframe * 60 * 1000    # Convert timeframe to milliseconds
+    start_time = end_time - (limit * interval_miliseconds)  # Calculate start time
+    url = " https://api.hyperliquid.xyz/info"
     headers = {"Content-Type": "application/json"}
     data = {
-        "type": "l2Book",
-        "coin": symbol
+        "type": "candleSnapshot",
+        "req": {
+            "coin": symbol,
+            "interval": f"{timeframe}m",  # Format interval as a string with 'm' of api will refuse
+            "startTime": start_time,
+            "endTime": end_time,
+        }
     }
 
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-    if response.status_code != 200:
-        raise Exception(f"Request failed: {response.text}")
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        candles = response.json()
+        candle_sticks = []
+        for candle in candles:
+            open = float(candle["o"])
+            close = float(candle["c"])
+            high = float(candle["h"])
+            low = float(candle["l"])
+            timestamp = candle["t"]
+            volume = float(candle["v"])
+            symbol = candle["s"]
+            candle_sticks.append({
+                "open": open,
+                "close": close,
+                "high": high,
+                "low": low,
+                "timestamp": timestamp,
+                "volume": volume,
+                "symbol": symbol
+            })
+        return candle_sticks
+    else:
+        print("Error: .....", response.status_code, response.text)
+        return None
     
-    book = response.json()["levels"]
-    bid = float(book[0][0]["px"])  # top of bid book
-    ask = float(book[1][0]["px"])  # top of ask book
-
-    return bid, ask
-

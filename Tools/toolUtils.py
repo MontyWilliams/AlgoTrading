@@ -15,6 +15,6 @@ def play_sound(file_path):
             stdout=subprocess.DEVNULL,  # Suppress standard output
             stderr=subprocess.DEVNULL   # Suppress error output
         )
-        print("playing sound")
+        # print("playing sound")
     except FileNotFoundError:
         print("Error: 'ffplay' is not installed or not found in PATH.")

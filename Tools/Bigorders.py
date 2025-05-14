@@ -6,6 +6,7 @@ import pytz
 from websockets import connect
 from termcolor import cprint
 from toolUtils import play_sound
+import threading
 
 # List of Symbols to track
 symbols = ['btcusdt', 'arusdt', 'taousdt']
@@ -18,10 +19,19 @@ if not os.path.exists(trades_filename):
         f.write('Event Time, Symbol, Aggregate Trade ID, Price, Quantity, First Trade ID, Trade Time, Is Buyer Maker\n')
 
 def sound_off(sound):
-    if sound == 'SELL_SOUND':
-        play_sound('./flush_y.wav')
-    elif sound == 'BUY_SOUND':
-        play_sound('./cash_register_x.wav')
+    def play_sound_thread(sound):
+        # print(f"Playing sound: {sound}")
+        if sound == 'SELL_SOUND':
+            play_sound('./flush_y.wav')
+        elif sound == 'BUY_SOUND':
+            play_sound('./cash_register_x.wav')
+        else:
+            print(f"Unknown sound: {sound}")
+
+    # Run the play_sound function in a separate thread
+    thread = threading.Thread(target=play_sound_thread, args=(sound,))
+    thread.daemon = True  # Ensure the thread exits when the main program exits
+    thread.start()
 
 async def binance_trade_stream(uri, symbol, filename):
     async with connect(uri) as websocket:

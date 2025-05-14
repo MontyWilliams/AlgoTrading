@@ -3,7 +3,7 @@ import ccxt
 import json
 from pprint import pprint
 # from hyperliquid.utils import constants
-from utils import setup
+from utils import setup, get_user_orders, cancel_open_orders
 import time
 import pandas as pd
 import datetime
@@ -15,8 +15,9 @@ import subprocess
 
 
 def main():
-    address, info, exchange = setup()
-    
+    address, info, exchange, account = setup()
+    get_user_orders()
+    cancel_open_orders()
     user_state = info.user_state(address)
     
     positions = []
@@ -24,8 +25,11 @@ def main():
         positions.append(position["position"])
     if len(positions) > 0:
         print("Positions:")
-        for position in positions:
-            print(json.dumps(position, indent=2))
+        # for position in positions:
+        #     print(json.dumps(position, indent=2))
+        pprint(user_state)
+        print(account)
+        print(info)
     try:
         subprocess.Popen(
             ['ffplay', '-nodisp', '-autoexit', 'coin.wav'],
