@@ -14,9 +14,9 @@ def get_candles(symbol, timeframe, limit):
     - Get candles for a given symbol, timeframe/limit
     - Returns a df of candles
     """
-    timeframe = int(timeframe)  # Convert to int incase it is a string
-    end_time = int(time.time() * 1000)  # Current time in milliseconds
+    timeframe = int(timeframe)  # Convert to int in case it's a string
     interval_miliseconds = timeframe * 60 * 1000    # Convert timeframe to milliseconds
+    end_time = int(time.time() * 1000)  # Current time in milliseconds
     start_time = end_time - (limit * interval_miliseconds)  # Calculate start time
     url = "https://api.hyperliquid.xyz/info"
     headers = {"Content-Type": "application/json"}
@@ -31,32 +31,30 @@ def get_candles(symbol, timeframe, limit):
     }
 
     response = requests.post(url, headers=headers, json=data)
-    if response.status_code == 200:
-        candles = response.json()
-        candle_sticks = []
-        for candle in candles:
-            open = float(candle["o"])
-            close = float(candle["c"])
-            high = float(candle["h"])
-            low = float(candle["l"])
-            timestamp = candle["t"]
-            volume = float(candle["v"])
-            candle_sticks.append({
-                "timestamp": timestamp,
-                "open": open,
-                "high": high,
-                "low": low,
-                "close": close,
-                "volume": volume
-            })
-        
-        candle_sticks_df = pd.DataFrame(candle_sticks, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
-        candle_sticks_df['timestamp'] = pd.to_datetime(candle_sticks_df['timestamp'], unit='ms')
-        return candle_sticks_df
-    else:
-        print("Error: .....", response.status_code, response.text)
+    if response.status_code != 200:
+        print(f"❌ Error: {response.status_code} - {response.text}")
         return None
-
+    
+    candles = response.json()
+    
+    if not candles or not isinstance(candles, list):
+        print("❌ No candle data returned.")
+        return None
+    
+    candle_sticks = []
+    for candle in candles:
+        candle_sticks.append({
+            "timestamp": pd.to_datetime(candle["t"], unit='ms'),
+            "open": float(candle["o"]),
+            "high": float(candle["h"]),
+            "low": float(candle["l"]),
+            "close": float(candle["c"]),
+            "volume": float(candle["v"])
+        })
+    df = pd.DataFrame(candle_sticks)
+    df['timestamp'] = df['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')  # Format to include seconds
+    return df
+    
 def save_to_csv(df, filename):
     """
     Save the DataFrame to a CSV file
@@ -66,7 +64,8 @@ def save_to_csv(df, filename):
 
 def main():
     df = get_candles(symbol, timeframe, limit)
-    print(df.head())
+    print("📅 Current local time:", pd.Timestamp.now())
+    print(df.tail())
     save_to_csv(df, csv_output_path)
 
 if __name__ == "__main__":
