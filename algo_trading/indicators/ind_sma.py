@@ -57,7 +57,7 @@ def ind_sma(symbol, timeframe, limit, sma_periods):
             ] = 'sell'
 
             # Clean up temp columns (optional but clean)
-            # df.drop(columns=[f'{col_short}_prev', f'{col_long}_prev'], inplace=True)
+            df.drop(columns=[f'{col_short}_prev', f'{col_long}_prev'], inplace=True)
 
     return df
 

@@ -1,72 +1,73 @@
 from algo_trading.utilities.utils import setup, get_user_orders, ask_bid
-import time
-import pandas as pd
-import json
-from pprint import pprint
-from kill_switch import kill_switch
+from algo_trading.algorithms.kill_switch import kill_switch
 
-target = 10
-max_loss = -1
+target = 10  # Target PnL %
+max_loss = 5  # Max loss %
 
-def pnl_close(target=target, max_loss=max_loss):
+def pnl_close(target, max_loss):
+    """
+    Check PnL of open positions and close them if they reach the target or max loss.
+    """
     address, info, exchange, account = setup()
 
-    while True:
-        openPositions, hasOpenPositions = get_user_orders(address, info)
-        
-        if not hasOpenPositions:
-        
-            print('No open positions...')
-            return
+    openPositions, hasOpenPositions = get_user_orders(address, info)
+    print(openPositions)
 
-        for position in openPositions:
-            symbol = position['symbol']
-            long = position['long']
-            size = position['size']
-            entry_price = float(position['entry_price'])
-            leverage = float(position['leverage'])
-            side = 'long' if long else 'short'
-            current_price = ask_bid(symbol)[1]
+    if not hasOpenPositions:
+        print('No open positions...')
+        return
 
-            print(f'side: {side} | entry price: {entry_price} | leverage: {leverage}')
-            if side == 'long':
-                diff = current_price - entry_price
-                long = True
+    results = []
+
+    for position in openPositions:
+        symbol = position['symbol']
+        long = position['long']
+        size = position['size']
+        entry_price = float(position['entry_price'])
+        leverage = float(position['leverage'])
+        side = 'long' if long else 'short'
+        current_price = ask_bid(symbol)[1]
+        initial_pos_value = size * entry_price
+        target_dollar_value = initial_pos_value * (target / 100)
+        dollar_pnl = (current_price - entry_price) * size if long else (entry_price - current_price) * size
+
+        print(f'Side: {side} | Entry: {entry_price} | Leverage: {leverage} | Current Price: {current_price}')
+
+        diff = (current_price - entry_price) if long else (entry_price - current_price)
+        try:
+            perc = round(((diff / entry_price) * leverage) * 100, 10)
+        except ZeroDivisionError:
+            perc = 0
+
+        print(f'PNL % for {symbol}: {perc}%')
+
+        pnlclose = False
+        in_pos = False
+
+        if perc > 0:
+            in_pos = True
+            print(f'Unrealized PnL: ${dollar_pnl:.4f} | Target: ${target_dollar_value:.4f}')
+            if dollar_pnl >= target_dollar_value:
+                print(f'Target reached: {target}% -> Closing position...')
+                kill_switch(address, info, exchange, symbol)
+                pnlclose = True
             else:
-                diff = entry_price - current_price
-                long = False
-            try:
-                perc = round(((diff / entry_price) * leverage), 10)
-            except:
-                perc = 0
-
-            perc = 100 * perc
-            print(f'for {symbol} this is the PNL % {(perc)}%')
-            pnlclose = False
-            in_pos =False
-
-            if perc > 0:
-                in_pos = True
-                print(f'In profit: {perc}%')
-                if perc >= target:
-                    print(f'Target reached: {target}%')
-                    pnlclose = True
-                    kill_switch(symbol)
-                else:
-                    print(f'Target not reached: {target}%')
-            elif perc < 0:
-                in_pos = True
-                if perc <= max_loss:
-                    print(f'Max loss reached: {max_loss}%. Closing position...')
-                    kill_switch(symbol)
-                else:
-                    print(f'Max loss not reached: {max_loss}%. Current PnL: {perc}%')
+                print(f'Target not reached: {target}%')
+        elif perc < 0:
+            in_pos = True
+            if perc <= -abs(max_loss):  # This is the fix
+                print(f'Max loss reached: {max_loss}% -> Closing position...')
+                kill_switch(address, info, exchange, symbol)
+                pnlclose = True
             else:
-                print('We are not in position')
-            print(f' for {symbol} Just finished checking PnL')
-            return pnlclose, in_pos, size, long
-        print('sleep for 30 seconds')
-        time.sleep(30)
+                print(f'Max loss not reached: {max_loss}%. Current PnL: {perc}%')
+        else:
+            print('PNL is zero. No action taken.')
+
+        print(f'Finished checking PnL for {symbol}\n')
+        results.append((symbol, pnlclose, in_pos, size, long, initial_pos_value))
+
+    return results
 
 def main():
     pnl_close(target, max_loss)

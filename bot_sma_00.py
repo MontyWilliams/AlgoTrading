@@ -1,7 +1,9 @@
-from algo_trading.utilities.utils import setup, ask_bid
+from algo_trading.utilities.utils import setup, ask_bid, get_user_orders
+from  algo_trading.algorithms.pnl_close import pnl_close
 from algo_trading.algorithms.kill_switch import kill_switch
 from algo_trading.indicators.ind_sma import ind_sma
 from pprint import pprint
+import time
 
 symbol = "AR"
 
@@ -16,13 +18,13 @@ def sma_bot_00():
     above the 41 period moving average and sell when the 20 period moving average crosses below
     the 41 period moving average.
     """
-    # kill_switch(address, info, exchange, "AR")
+    # kill_switch(address, info, exchange, symbol)
     ask, bid, l2_data = ask_bid(symbol)
-    # pprint(f"ask: {ask} | bid: {bid} | l2_data: {l2_data}")
     df = ind_sma(symbol, 15, 1000, [20, 50])
-    counts = df['crossover_20_50m'].value_counts()
-    print(counts)   
+    pnl_close(10, 5)
 def main():
-    sma_bot_00()
+    while True:
+        sma_bot_00()
+        time.sleep(30)
 if __name__ == "__main__":
     main()

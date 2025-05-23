@@ -38,7 +38,7 @@ def setup(base_url='https://api.hyperliquid.xyz', skip_ws=False):
             raise Exception(error_string)
         exchange = Exchange(account, base_url, account_address=address)
         print("Exchange setup complete")
-        print(user_state)
+        # print(user_state)
         return address, info, exchange, account
 
 def setup_multi_sig_wallets():
@@ -163,7 +163,8 @@ def get_symbol_index(symbol):
 
 def get_user_orders(address, info):
     """
-    Gets all open orders and returns them as a dict along with a bool
+    * Gets all open orders
+    - returns orders in a dict along with a bool
     """
     user_state = info.user_state(address)
     open_positions = user_state["assetPositions"]
@@ -171,25 +172,25 @@ def get_user_orders(address, info):
     
     result = []
     for position in open_positions:
-        szi = float(position["position"]["szi"])
-        if szi == 0:
-            continue
-        symbol = position["position"]["coin"]
-        index_pos = get_symbol_index(symbol)
-        long = szi > 0
-        entry_price = position["position"]["entryPx"]
-        leverage = position["position"]["leverage"]["value"]
-        pnl = position["position"]["unrealizedPnl"]
-        result.append({
-            "symbol": symbol,
-            "size": abs(szi),
-            "long": long,
-            "index_pos": index_pos,
-            "entry_price": entry_price,
-            "leverage": leverage,
-            "pnl": pnl
-        })
-    if position:
+        if position:
+            szi = float(position["position"]["szi"])
+            if szi == 0:
+                continue
+            symbol = position["position"]["coin"]
+            index_pos = get_symbol_index(symbol)
+            long = szi > 0
+            entry_price = position["position"]["entryPx"]
+            leverage = position["position"]["leverage"]["value"]
+            pnl = position["position"]["unrealizedPnl"]
+            result.append({
+                "symbol": symbol,
+                "size": abs(szi),
+                "long": long,
+                "index_pos": index_pos,
+                "entry_price": entry_price,
+                "leverage": leverage,
+                "pnl": pnl
+            })
         return result, True
     else:
         print("No open positions found.")

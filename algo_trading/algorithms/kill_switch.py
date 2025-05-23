@@ -25,7 +25,7 @@ def kill_switch(address, info, exchange, symbol):
             long = position["long"]
 
             print(f'Closing position for {symbol} with size {size} and isLong: {long}')
-            bid, ask = ask_bid(symbol)
+            ask, bid, l2_data = ask_bid(symbol)
 
             if long:
                 price = ask
