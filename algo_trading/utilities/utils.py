@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import time
 import requests
 import eth_account
@@ -11,6 +12,8 @@ import subprocess
 from pprint import pprint
 from decimal import Decimal
 from eth_account.messages import encode_defunct
+
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 def setup(base_url='https://api.hyperliquid.xyz', skip_ws=False):
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
@@ -34,6 +37,8 @@ def setup(base_url='https://api.hyperliquid.xyz', skip_ws=False):
             error_string = f"No accountValue:\nIf you think this is a mistake, make sure that {address} has a balance on {url}.\nIf address shown is your API wallet address, update the config to specify the address of your account, not the address of the API wallet."
             raise Exception(error_string)
         exchange = Exchange(account, base_url, account_address=address)
+        print("Exchange setup complete")
+        print(user_state)
         return address, info, exchange, account
 
 def setup_multi_sig_wallets():
@@ -57,6 +62,8 @@ def setup_multi_sig_wallets():
 def ask_bid(symbol):
     """
     This function returns the ask and bid price for the given symbol
+    - returns 3 tuples: ask, bid, l2_data
+    - 
     """
     url = 'https://api.hyperliquid.xyz/info'
     headers = {'Content-Type': 'application/json'}
@@ -216,7 +223,7 @@ def get_candles(symbol, timeframe, limit):
     end_time = int(time.time() * 1000)  # Current time in milliseconds
     interval_miliseconds = timeframe * 60 * 1000    # Convert timeframe to milliseconds
     start_time = end_time - (limit * interval_miliseconds)  # Calculate start time
-    url = " https://api.hyperliquid.xyz/info"
+    url = "https://api.hyperliquid.xyz/info"
     headers = {"Content-Type": "application/json"}
     data = {
         "type": "candleSnapshot",
@@ -253,4 +260,50 @@ def get_candles(symbol, timeframe, limit):
     else:
         print("Error: .....", response.status_code, response.text)
         return None
-    
+
+def get_candles_hourly(symbol, timeframe, limit):
+    """"
+    - Get candles for a given symbol, timeframe/limit
+    - Returns a dict of candles
+    """
+    timeframe = int(timeframe)  # Convert to int incase it is a string
+    end_time = int(time.time() * 1000)  # Current time in milliseconds
+    interval_miliseconds = timeframe * 60 * 1000    # Convert timeframe to milliseconds
+    start_time = end_time - (limit * interval_miliseconds)  # Calculate start time
+    url = "https://api.hyperliquid.xyz/info"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "type": "candleSnapshot",
+        "req": {
+            "coin": symbol,
+            "interval": f"{timeframe}h",  # Format interval as a string with 'm' of api will refuse
+            "startTime": start_time,
+            "endTime": end_time,
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        candles = response.json()
+        candle_sticks = []
+        for candle in candles:
+            open = float(candle["o"])
+            close = float(candle["c"])
+            high = float(candle["h"])
+            low = float(candle["l"])
+            timestamp = candle["t"]
+            volume = float(candle["v"])
+            symbol = candle["s"]
+            candle_sticks.append({
+                "open": open,
+                "close": close,
+                "high": high,
+                "low": low,
+                "timestamp": timestamp,
+                "volume": volume,
+                "symbol": symbol
+            })
+        return candle_sticks
+    else:
+        print("Error: .....", response.status_code, response.text)
+        return None

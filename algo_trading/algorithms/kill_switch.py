@@ -1,20 +1,15 @@
-from utils import setup, get_user_orders, cancel_open_orders, ask_bid
+from algo_trading.utilities.utils import get_user_orders, cancel_open_orders, ask_bid
 import time
 import pandas as pd
-import json
-from pprint import pprint
-
-symbol = ''
 
 
-def kill_switch(symbol=symbol):
+def kill_switch(address, info, exchange, symbol):
     """
     Gets User info from setup(), passes in symbols
     to open_positions and then checks the balances
     so that we can close the positions
     """
     print(f'starting kill switch for {symbol}')
-    address, info, exchange, account = setup()
 
     while True:
         openPositions, has_positions = get_user_orders(address, info)
@@ -53,7 +48,7 @@ def kill_switch(symbol=symbol):
         time.sleep(30)
     
 def main():
-    kill_switch(symbol)
+    pass  # This module is intended to be imported, not run directly.
           
 if __name__ == "__main__":
     main()

@@ -19,14 +19,47 @@ def ind_sma(symbol, timeframe, limit, sma_periods):
         print("No candle data returned!")
         return pd.DataFrame()
     # Convert the candle data to a DataFrame
-    df_sma = pd.DataFrame(candle_sticks, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume']) 
-    df_sma['timestamp'] = pd.to_datetime(df_sma['timestamp'], unit='ms')
+    df = pd.DataFrame(candle_sticks, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume']) 
+    df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
 
     # Calculate the SMA of periods
     for period in sma_periods:  
-        df_sma[f'sma{period}_{timeframe}'] = df_sma['close'].rolling(period).mean()
+        df[f'sma{period}_{timeframe}m'] = df['close'].rolling(period).mean()
+
+    # Detect crossovers for all SMA pairs  
+    for i in range(len(sma_periods)):
+        for j in range(i + 1, len(sma_periods)):
+            short = sma_periods[i]
+            long = sma_periods[j]
+            col_short = f'sma{short}_{timeframe}m'
+            col_long = f'sma{long}_{timeframe}m'
     
-    return df_sma
+            # Previous values
+            df[f'{col_short}_prev'] = df[col_short].shift(1)
+            df[f'{col_long}_prev'] = df[col_long].shift(1)
+
+           # Crossover column name
+            crossover_col = f'crossover_{short}_{long}m'
+            df[crossover_col] = None
+
+            # Bullish crossover Buy signal
+            df.loc[
+                (df[f'{col_short}_prev'] < df[f'{col_long}_prev']) & 
+                (df[col_short] > df[col_long]),
+                crossover_col
+            ] = 'buy'
+
+            # Bearish crossover Sell signal
+            df.loc[
+                (df[f'{col_short}_prev'] > df[f'{col_long}_prev']) & 
+                (df[col_short] < df[col_long]),
+                crossover_col
+            ] = 'sell'
+
+            # Clean up temp columns (optional but clean)
+            # df.drop(columns=[f'{col_short}_prev', f'{col_long}_prev'], inplace=True)
+
+    return df
 
 def ind_sma_hourly(symbol, timeframe, limit, sma):
     

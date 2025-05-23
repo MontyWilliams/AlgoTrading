@@ -1,7 +1,7 @@
 import pandas as pd
 # from talib import RSI
 import time
-from utils import get_candles, setup, ask_bid
+from utils import get_candles
 
 symbol = 'AR'
 timeframe = '15'

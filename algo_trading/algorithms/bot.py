@@ -1,5 +1,5 @@
 import time
-from utils import setup, get_sz_px_decimals, ask_bid, play_sound
+from algo_trading.utilities.utils import setup, get_sz_px_decimals, ask_bid, play_sound
 from hyperliquid.info import Info
 from hyperliquid.exchange import Exchange
 from hyperliquid.utils import constants

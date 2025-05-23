@@ -3,7 +3,7 @@ import ccxt
 import json
 from pprint import pprint
 # from hyperliquid.utils import constants
-from utils import setup, get_user_orders, cancel_open_orders
+from algo_trading.utilities.utils import setup, get_user_orders, cancel_open_orders
 import time
 import pandas as pd
 import datetime

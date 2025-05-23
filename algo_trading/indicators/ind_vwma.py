@@ -1,5 +1,5 @@
 import pandas as pd
-import talib as ta
+from talib import RSI
 import time
 from utils import get_candles
 
