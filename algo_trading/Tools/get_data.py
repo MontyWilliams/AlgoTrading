@@ -3,11 +3,16 @@ import time
 import requests
 import pandas as pd
 import json
+from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parent.parent  # or adjust as needed
+DATA_DIR = ROOT_DIR / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 symbol = 'AR'
 timeframe = '15'
-limit = 100
-csv_output_path = f"{symbol}_{timeframe}m_data.csv"
+limit = 672  # 672 = 7 days of 15m candles
+csv_output_path = DATA_DIR / f"{symbol}_{timeframe}m_data.csv"
 
 def get_candles(symbol, timeframe, limit):
     """"
